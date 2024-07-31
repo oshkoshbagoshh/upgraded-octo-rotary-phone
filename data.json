@@ -1,0 +1,47 @@
+{
+    "users": [
+      {
+        "username": "fcc_test",
+        "_id": "1722470129562"
+      },
+      {
+        "username": "john_doe",
+        "_id": "1722470129563"
+      },
+      {
+        "username": "jane_smith",
+        "_id": "1722470129564"
+      }
+    ],
+    "exercises": [
+      {
+        "username": "fcc_test",
+        "description": "test exercise",
+        "duration": 60,
+        "date": "Mon Jan 01 2024",
+        "_id": "1722470129562"
+      },
+      {
+        "username": "fcc_test",
+        "description": "running",
+        "duration": 30,
+        "date": "Tue Jan 02 2024",
+        "_id": "1722470129562"
+      },
+      {
+        "username": "john_doe",
+        "description": "weightlifting",
+        "duration": 45,
+        "date": "Wed Jan 03 2024",
+        "_id": "1722470129563"
+      },
+      {
+        "username": "jane_smith",
+        "description": "yoga",
+        "duration": 90,
+        "date": "Thu Jan 04 2024",
+        "_id": "1722470129564"
+      }
+    ]
+  }
+  

@@ -1,21 +1,4 @@
 const express = require('express');
-const cors = require('cors')
-require('dotenv').config()
-
-app.use(cors())
-app.use(express.static('public'))
-app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/views/index.html')
-});
-
-
-
-
-
-const listener = app.listen(process.env.PORT || 3000, () => {
-  console.log('Your app is listening on port ' + listener.address().port)
-})
-const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const fs = require('fs').promises;
@@ -33,13 +16,22 @@ const dataPath = path.join(__dirname, 'data.json');
 
 // Helper function to read data
 async function readData() {
-  const data = await fs.readFile(dataPath, 'utf8');
-  return JSON.parse(data);
+  try {
+    const data = await fs.readFile(dataPath, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    console.error("Error reading data:", error);
+    return { users: [], exercises: [] };
+  }
 }
 
 // Helper function to write data
 async function writeData(data) {
-  await fs.writeFile(dataPath, JSON.stringify(data, null, 2));
+  try {
+    await fs.writeFile(dataPath, JSON.stringify(data, null, 2));
+  } catch (error) {
+    console.error("Error writing data:", error);
+  }
 }
 
 app.get('/', (req, res) => {
@@ -58,7 +50,8 @@ app.post('/api/users', async (req, res) => {
     await writeData(data);
     res.json(newUser);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -68,7 +61,8 @@ app.get('/api/users', async (req, res) => {
     const data = await readData();
     res.json(data.users);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -83,23 +77,19 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
 
     const { description, duration, date } = req.body;
     const newExercise = {
-      userId: user._id,
+      username: user.username,
       description,
       duration: parseInt(duration),
       date: date ? new Date(date).toDateString() : new Date().toDateString(),
+      _id: user._id
     };
     data.exercises.push(newExercise);
     await writeData(data);
 
-    res.json({
-      _id: user._id,
-      username: user.username,
-      description: newExercise.description,
-      duration: newExercise.duration,
-      date: newExercise.date,
-    });
+    res.json(newExercise);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -113,7 +103,7 @@ app.get('/api/users/:_id/logs', async (req, res) => {
     }
 
     let { from, to, limit } = req.query;
-    let exercises = data.exercises.filter(e => e.userId === user._id);
+    let exercises = data.exercises.filter(e => e._id === user._id);
 
     if (from) {
       exercises = exercises.filter(e => new Date(e.date) >= new Date(from));
@@ -125,20 +115,15 @@ app.get('/api/users/:_id/logs', async (req, res) => {
       exercises = exercises.slice(0, parseInt(limit));
     }
 
-    const log = exercises.map(e => ({
-      description: e.description,
-      duration: e.duration,
-      date: e.date,
-    }));
-
     res.json({
-      _id: user._id,
       username: user.username,
       count: exercises.length,
-      log,
+      _id: user._id,
+      log: exercises.map(({ description, duration, date }) => ({ description, duration, date }))
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
