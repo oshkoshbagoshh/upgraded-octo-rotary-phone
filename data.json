@@ -2,8 +2,8 @@
   "users": [
     {
       "_id": "1",
-      "username": "teset",
-      "exercises": [
+      "username": "test",
+      "log": [
         {
           "description": "exercise description",
           "duration": 30,

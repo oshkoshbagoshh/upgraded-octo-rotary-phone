@@ -72,10 +72,10 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
     };
 
     // Add the exercise to the user's exercises array
-    if (!user.exercises) {
-      user.exercises = [];
+    if (!user.log) {
+      user.log = [];
     }
-    user.exercises.push(newExercise);
+    user.log.push(newExercise);
 
     // Update the user in the data
     const userIndex = data.users.findIndex(u => u._id === req.params._id);
@@ -106,7 +106,7 @@ app.get('/api/users/:_id/logs', async (req, res) => {
     }
 
     let { from, to, limit } = req.query;
-    let exercises = user.exercises || [];
+    let exercises = user.log || [];
 
     if (from) {
       exercises = exercises.filter(e => new Date(e.date) >= new Date(from));
@@ -117,6 +117,12 @@ app.get('/api/users/:_id/logs', async (req, res) => {
     if (limit) {
       exercises = exercises.slice(0, parseInt(limit));
     }
+
+    // Ensure date is in the correct string format
+    exercises = exercises.map(e => ({
+      ...e,
+      date: new Date(e.date).toDateString()
+    }));
 
     res.json({
       _id: user._id,
