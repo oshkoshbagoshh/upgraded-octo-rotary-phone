@@ -16,22 +16,13 @@ const dataPath = path.join(__dirname, 'data.json');
 
 // Helper function to read data
 async function readData() {
-  try {
-    const data = await fs.readFile(dataPath, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    console.error("Error reading data:", error);
-    return { users: [], exercises: [] };
-  }
+  const data = await fs.readFile(dataPath, 'utf8');
+  return JSON.parse(data);
 }
 
 // Helper function to write data
 async function writeData(data) {
-  try {
-    await fs.writeFile(dataPath, JSON.stringify(data, null, 2));
-  } catch (error) {
-    console.error("Error writing data:", error);
-  }
+  await fs.writeFile(dataPath, JSON.stringify(data, null, 2));
 }
 
 app.get('/', (req, res) => {
@@ -50,8 +41,7 @@ app.post('/api/users', async (req, res) => {
     await writeData(data);
     res.json(newUser);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -61,8 +51,7 @@ app.get('/api/users', async (req, res) => {
     const data = await readData();
     res.json(data.users);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -77,19 +66,33 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
 
     const { description, duration, date } = req.body;
     const newExercise = {
-      username: user.username,
       description,
       duration: parseInt(duration),
       date: date ? new Date(date).toDateString() : new Date().toDateString(),
-      _id: user._id
     };
-    data.exercises.push(newExercise);
+
+    // Add the exercise to the user's exercises array
+    if (!user.exercises) {
+      user.exercises = [];
+    }
+    user.exercises.push(newExercise);
+
+    // Update the user in the data
+    const userIndex = data.users.findIndex(u => u._id === req.params._id);
+    data.users[userIndex] = user;
+
     await writeData(data);
 
-    res.json(newExercise);
+    // Return the user object with the exercise fields added
+    res.json({
+      _id: user._id,
+      username: user.username,
+      date: newExercise.date,
+      duration: newExercise.duration,
+      description: newExercise.description
+    });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -103,7 +106,7 @@ app.get('/api/users/:_id/logs', async (req, res) => {
     }
 
     let { from, to, limit } = req.query;
-    let exercises = data.exercises.filter(e => e._id === user._id);
+    let exercises = user.exercises || [];
 
     if (from) {
       exercises = exercises.filter(e => new Date(e.date) >= new Date(from));
@@ -116,17 +119,16 @@ app.get('/api/users/:_id/logs', async (req, res) => {
     }
 
     res.json({
+      _id: user._id,
       username: user.username,
       count: exercises.length,
-      _id: user._id,
-      log: exercises.map(({ description, duration, date }) => ({ description, duration, date }))
+      log: exercises
     });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: err.message });
   }
 });
 
 app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+  console.log(`Your app is listening on port ${port}`);
 });
